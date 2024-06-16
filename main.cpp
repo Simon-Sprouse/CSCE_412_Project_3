@@ -96,52 +96,45 @@ class LoadBalancer {
 
 };
 
+int randomNumber() {
+
+    // Initialize random number generator
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    // Generate and return random number
+
+    int output = (dis(gen) * 10) + 2;
+    return output;
+}
+
 
 
 int main() { 
-    printf("Hello world\n");
 
 
-
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::normal_distribution<> normalDist(5.0, 1);
-
-    for (int i = 0; i < 20; i++) { 
-        cout << int(normalDist(gen)) << endl;
-    }
-
-
-
-
-
-
-    int clock_time = 0;
-
-
- 
-
-    // both of these should be user input
+    // User Inputs
     int servers = 100;
-    int time; // i interperet this as the time it takes to process a file
+    int time = 5; 
 
     int initial_buffer_size = servers * 100;
-
     vector<Request> request_buffer(initial_buffer_size);
 
     LoadBalancer my_load_balancer;
     my_load_balancer.addRequestMultiple(request_buffer);
 
+    int clock_time = 0;
 
     while (my_load_balancer.isEmpty() == false) { 
 
-        vector<Request> incoming_requests(3);
+
+        vector<Request> incoming_requests(randomNumber());
         my_load_balancer.addRequestMultiple(incoming_requests);
 
         my_load_balancer.runServers();
 
-        cout << my_load_balancer.size() << endl;
+        // cout << my_load_balancer.size() << endl;
 
 
 
