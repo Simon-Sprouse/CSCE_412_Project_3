@@ -74,7 +74,7 @@ class LoadBalancer {
 
     void runServers() { 
         for (WebServer server : web_servers) { 
-            if (server.isWorking() == false) { 
+            if (server.isWorking() == false && request_queue.empty() == false) { 
                 Request job = request_queue.front();
                 request_queue.pop();
                 server.giveWork(job);
@@ -101,11 +101,26 @@ class LoadBalancer {
 int main() { 
     printf("Hello world\n");
 
+
+
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<> normalDist(5.0, 1);
+
+    for (int i = 0; i < 20; i++) { 
+        cout << int(normalDist(gen)) << endl;
+    }
+
+
+
+
+
+
     int clock_time = 0;
 
 
-    // static std::random_device rd;
-    // static std::mt19937 engine(rd);
+ 
 
     // both of these should be user input
     int servers = 100;
@@ -121,7 +136,8 @@ int main() {
 
     while (my_load_balancer.isEmpty() == false) { 
 
-
+        vector<Request> incoming_requests(3);
+        my_load_balancer.addRequestMultiple(incoming_requests);
 
         my_load_balancer.runServers();
 
@@ -134,6 +150,12 @@ int main() {
 
 
     }
+
+
+
+
+
+
 
 
 
