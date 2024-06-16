@@ -4,6 +4,7 @@
 #include <random>
 #include <queue>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -52,14 +53,30 @@ class LoadBalancer {
     private:
     queue<Request> request_queue;
     vector<WebServer> web_servers;
+    vector<int> queue_size_history;
 
 
     public:
 
     LoadBalancer() { 
-        for (int i = 0; i < 20; i++) {
+        addServers(1);
+        queue_size_history.push_back(requestSize());
+    }
+
+    LoadBalancer(int s, vector<Request> v) { 
+        addServers(s);
+        addRequestMultiple(v);
+        queue_size_history.push_back(requestSize());
+    }
+
+    void addServers(int n) { 
+        for (int i = 0; i < n; i++) { 
             web_servers.push_back(WebServer());
         }
+    }
+
+    void removeServers(int n) { 
+        web_servers.erase(web_servers.end() - n, web_servers.end());
     }
 
     void addRequest(Request r) { 
@@ -73,6 +90,7 @@ class LoadBalancer {
     }
 
     void runServers() { 
+
         for (WebServer server : web_servers) { 
             if (server.isWorking() == false && request_queue.empty() == false) { 
                 Request job = request_queue.front();
@@ -83,14 +101,35 @@ class LoadBalancer {
                 server.work();
             }
         }
+
+        int prev_q_size = queue_size_history.back();
+        int curr_q_size = requestSize();
+        queue_size_history.push_back(curr_q_size);
+
+        double request_to_server_ratio = requestSize() / serverSize();
+
+        if (request_to_server_ratio > 100) { 
+            addServers(serverSize() * 0.1 + 1);
+        }
+        else {
+            removeServers(serverSize() * 0.1 + 1);
+        }
+
+
+
+
     }
 
     bool isEmpty() { 
         return request_queue.empty();
     }
 
-    int size() {
+    int requestSize() {
         return request_queue.size();
+    }
+
+    int serverSize() { 
+        return web_servers.size();
     }
 
 
@@ -103,9 +142,7 @@ int randomNumber() {
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0);
 
-    // Generate and return random number
-
-    int output = (dis(gen) * 10) + 2;
+    int output = (dis(gen) * 200) + 2;
     return output;
 }
 
@@ -113,44 +150,45 @@ int randomNumber() {
 
 int main() { 
 
+    ofstream file("log.txt");
+    if (!file) {
+        return -1;
+    }
+
 
     // User Inputs
-    int servers = 100;
-    int time = 5; 
+    int initial_servers = 10;
+    int clock_time_limit = 10000; 
 
-    int initial_buffer_size = servers * 100;
-    vector<Request> request_buffer(initial_buffer_size);
+    vector<Request> initial_request_buffer(initial_servers * 100);
+    LoadBalancer my_load_balancer(initial_servers, initial_request_buffer);
 
-    LoadBalancer my_load_balancer;
-    my_load_balancer.addRequestMultiple(request_buffer);
 
     int clock_time = 0;
 
-    while (my_load_balancer.isEmpty() == false) { 
+    while (clock_time < clock_time_limit) { 
 
 
         vector<Request> incoming_requests(randomNumber());
         my_load_balancer.addRequestMultiple(incoming_requests);
-
         my_load_balancer.runServers();
 
-        // cout << my_load_balancer.size() << endl;
 
+        file 
+            << "Number of Requests: "
+            << my_load_balancer.requestSize() 
+            << ", Number of Servers: "
+            << my_load_balancer.serverSize()
+        << endl;
 
 
 
         clock_time += 1;
 
-
     }
 
 
-
-
-
-
-
-
+    file.close();
 
 
     return 0;
