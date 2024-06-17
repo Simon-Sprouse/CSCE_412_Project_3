@@ -8,11 +8,21 @@
 
 using namespace std;
 
+int randomNumber(int mean, int range) {
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    int output = (dis(gen) * range) + mean;
+    return output;
+}
+
 
 struct Request {
     string ip_in;
     string ip_out;
-    int time;
+    int time = randomNumber(1, 3);
     string request_text = 
         "GET / HTTP/1.1\r\n"
         "Host: example.com\r\n"
@@ -24,7 +34,6 @@ class WebServer{
 
     private: 
 
-    int time = 5;
     int time_to_finish_current_job;
 
     public: 
@@ -40,11 +49,15 @@ class WebServer{
     }
 
     void giveWork(Request r) { 
-        time_to_finish_current_job = time;
+        time_to_finish_current_job = r.time;
     }
 
     bool isWorking() { 
         return time_to_finish_current_job > 0;
+    }
+
+    int timeLeft() { 
+        return time_to_finish_current_job;
     }
 
 };
@@ -91,16 +104,18 @@ class LoadBalancer {
 
     void runServers() { 
 
-        for (WebServer server : web_servers) { 
-            if (server.isWorking() == false && request_queue.empty() == false) { 
+        for (int i = 0; i < web_servers.size(); i++) { 
+            if (web_servers.at(i).isWorking() == false && request_queue.empty() == false) { 
                 Request job = request_queue.front();
                 request_queue.pop();
-                server.giveWork(job);
+                web_servers.at(i).giveWork(job);
             }
             else { 
-                server.work();
+                web_servers.at(i).work();
             }
         }
+
+  
 
         double request_to_server_ratio = requestSize() / serverSize();
 
@@ -127,18 +142,6 @@ class LoadBalancer {
 
 
 };
-
-int randomNumber() {
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-
-    int mean = 100;
-    int range = 100;
-    int output = (dis(gen) * range) + mean;
-    return output;
-}
 
 
 
@@ -177,7 +180,7 @@ int main() {
         << endl;
 
 
-        vector<Request> incoming_requests(randomNumber());
+        vector<Request> incoming_requests(randomNumber(100, 300));
         my_load_balancer.addRequestMultiple(incoming_requests);
         my_load_balancer.runServers();
 
