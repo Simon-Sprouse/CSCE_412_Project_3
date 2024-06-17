@@ -21,7 +21,9 @@ struct Request {
 };
 
 class WebServer{
+
     private: 
+
     int time = 5;
     int time_to_finish_current_job;
 
@@ -51,22 +53,20 @@ class WebServer{
 class LoadBalancer {
 
     private:
+
     queue<Request> request_queue;
     vector<WebServer> web_servers;
-    vector<int> queue_size_history;
 
 
     public:
 
     LoadBalancer() { 
         addServers(1);
-        queue_size_history.push_back(requestSize());
     }
 
     LoadBalancer(int s, vector<Request> v) { 
         addServers(s);
         addRequestMultiple(v);
-        queue_size_history.push_back(requestSize());
     }
 
     void addServers(int n) { 
@@ -102,10 +102,6 @@ class LoadBalancer {
             }
         }
 
-        int prev_q_size = queue_size_history.back();
-        int curr_q_size = requestSize();
-        queue_size_history.push_back(curr_q_size);
-
         double request_to_server_ratio = requestSize() / serverSize();
 
         if (request_to_server_ratio > 100) { 
@@ -114,9 +110,6 @@ class LoadBalancer {
         else {
             removeServers(serverSize() * 0.1 + 1);
         }
-
-
-
 
     }
 
@@ -137,12 +130,13 @@ class LoadBalancer {
 
 int randomNumber() {
 
-    // Initialize random number generator
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0);
 
-    int output = (dis(gen) * 200) + 2;
+    int mean = 100;
+    int range = 100;
+    int output = (dis(gen) * range) + mean;
     return output;
 }
 
@@ -155,10 +149,16 @@ int main() {
         return -1;
     }
 
-
     // User Inputs
-    int initial_servers = 10;
-    int clock_time_limit = 10000; 
+    int initial_servers;
+    int clock_time_limit; 
+
+    cout << "Enter number of initial servers: ";
+    cin >> initial_servers;
+
+    cout << "Enter number of initial clock cycles: ";
+    cin >> clock_time_limit;
+
 
     vector<Request> initial_request_buffer(initial_servers * 100);
     LoadBalancer my_load_balancer(initial_servers, initial_request_buffer);
@@ -169,18 +169,17 @@ int main() {
     while (clock_time < clock_time_limit) { 
 
 
-        vector<Request> incoming_requests(randomNumber());
-        my_load_balancer.addRequestMultiple(incoming_requests);
-        my_load_balancer.runServers();
-
-
         file 
-            << "Number of Requests: "
+            << "Requests in queue: "
             << my_load_balancer.requestSize() 
             << ", Number of Servers: "
             << my_load_balancer.serverSize()
         << endl;
 
+
+        vector<Request> incoming_requests(randomNumber());
+        my_load_balancer.addRequestMultiple(incoming_requests);
+        my_load_balancer.runServers();
 
 
         clock_time += 1;
@@ -189,7 +188,6 @@ int main() {
 
 
     file.close();
-
 
     return 0;
 }
